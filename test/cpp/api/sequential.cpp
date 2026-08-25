@@ -368,6 +368,21 @@ TEST_F(SequentialTest, IsCloneable) {
   }
 }
 
+TEST_F(SequentialTest, CloneRetainsChildNames) {
+  Sequential named(
+      {{"linear", Linear(3, 4)}, {"relu", Functional(torch::relu)}});
+  Sequential named_clone =
+      std::dynamic_pointer_cast<SequentialImpl>(named->clone());
+  ASSERT_EQ(
+      named->named_children().keys(), named_clone->named_children().keys());
+
+  Sequential unnamed(Linear(3, 4), Functional(torch::relu));
+  Sequential unnamed_clone =
+      std::dynamic_pointer_cast<SequentialImpl>(unnamed->clone());
+  ASSERT_EQ(
+      unnamed->named_children().keys(), unnamed_clone->named_children().keys());
+}
+
 TEST_F(SequentialTest, RegistersElementsAsSubmodules) {
   Sequential sequential(Linear(10, 3), Conv2d(1, 2, 3), Dropout2d(0.5));
 

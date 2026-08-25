@@ -9,6 +9,7 @@
 #include <torch/types.h>
 
 #include <c10/util/Exception.h>
+#include <c10/util/irange.h>
 
 #include <cstdint>
 #include <memory>
@@ -126,8 +127,11 @@ class SequentialImpl : public Cloneable<SequentialImpl> {
   std::shared_ptr<Module> clone(
       const std::optional<Device>& device = std::nullopt) const override {
     auto clone = std::make_shared<SequentialImpl>();
-    for (const auto& module : modules_) {
-      clone->push_back(module.clone(device));
+    // push_back() appends to modules_ and registers the child under the same
+    // name in lockstep, so the i-th child name belongs to the i-th AnyModule.
+    auto names = named_children();
+    for (const auto i : c10::irange(modules_.size())) {
+      clone->push_back(names[i].key(), modules_[i].clone(device));
     }
     return clone;
   }
