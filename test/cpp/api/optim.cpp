@@ -470,6 +470,26 @@ TEST(OptimTest, AddParameter_LBFGS) {
   // REQUIRE this doesn't throw
 }
 
+TEST(OptimTest, AddParamGroup_Adagrad) {
+  torch::manual_seed(0);
+
+  std::vector<torch::Tensor> parameters = {torch::randn({5, 5})};
+  std::vector<torch::Tensor> original_parameters = {parameters[0].clone()};
+
+  for (auto& parameter : parameters) {
+    parameter.mutable_grad() = torch::ones_like(parameter);
+  }
+
+  Adagrad optimizer(std::vector<torch::Tensor>{}, AdagradOptions(1.0));
+  optimizer.add_param_group(OptimizerParamGroup(parameters));
+
+  optimizer.step();
+
+  ASSERT_EQ(optimizer.state().size(), parameters.size());
+  // sum becomes grad^2 == 1, so the update is -lr * grad / (sqrt(1) + eps).
+  ASSERT_TRUE(parameters[0].allclose(original_parameters[0] - 1.0));
+}
+
 // Check whether the learning rate of the parameter groups in the optimizer are
 // the same as the expected learning rates given in the epoch:learning rate map
 static void check_lr_change(

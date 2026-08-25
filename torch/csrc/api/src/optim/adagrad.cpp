@@ -72,13 +72,21 @@ Tensor Adagrad::step(LossClosure closure) {
         continue;
       }
       auto grad = p.grad();
-      TORCH_INTERNAL_ASSERT(
-          state_[p.unsafeGetTensorImpl()] != nullptr,
-          "state found NULL for the Tensor ",
-          p);
-      auto& state =
-          static_cast<AdagradParamState&>(*state_[p.unsafeGetTensorImpl()]);
       auto& options = static_cast<AdagradOptions&>(group.options());
+      // Parameters added to a group after construction have no state yet, so
+      // initialize it here the same way the constructor does.
+      auto param_state = state_.find(p.unsafeGetTensorImpl());
+      if (param_state == state_.end()) {
+        auto new_state = std::make_unique<AdagradParamState>();
+        new_state->step(0);
+        new_state->sum(torch::full_like(
+            p.data(),
+            options.initial_accumulator_value(),
+            at::MemoryFormat::Preserve));
+        param_state =
+            state_.emplace(p.unsafeGetTensorImpl(), std::move(new_state)).first;
+      }
+      auto& state = static_cast<AdagradParamState&>(*param_state->second);
 
       state.step(state.step() + 1);
 
