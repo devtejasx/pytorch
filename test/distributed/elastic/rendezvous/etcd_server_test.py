@@ -6,12 +6,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 import os
+import socket
 import sys
 import unittest
+from unittest.mock import patch
 
 from torch.distributed.elastic.rendezvous import RendezvousParameters
 from torch.distributed.elastic.rendezvous.etcd_rendezvous import create_rdzv_handler
-from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
+from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer, find_free_port
 
 
 if os.getenv("CIRCLECI"):
@@ -58,3 +60,73 @@ class EtcdServerTest(unittest.TestCase):
             self.assertEqual(1, rdzv_info.world_size)
         finally:
             server.stop()
+
+
+class FindFreePortTest(unittest.TestCase):
+    def test_socket_creation_failure_is_not_masked(self):
+        # socket() raising means no socket was created, so there is nothing to
+        # close. Closing regardless raised UnboundLocalError and hid the real
+        # error.
+        with (
+            patch(
+                "socket.getaddrinfo",
+                return_value=[
+                    (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0))
+                ],
+            ),
+            patch("socket.socket", side_effect=OSError("socket failed")),
+        ):
+            with self.assertRaises(RuntimeError):
+                find_free_port()
+
+    def test_remaining_addresses_are_tried(self):
+        real_socket = socket.socket
+        attempts = []
+
+        def flaky_socket(family, type, proto):
+            attempts.append((family, type, proto))
+            if len(attempts) == 1:
+                raise OSError("socket failed on first address")
+            return real_socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+
+        with (
+            patch(
+                "socket.getaddrinfo",
+                return_value=[
+                    (socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::1", 0)),
+                    (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0)),
+                ],
+            ),
+            patch("socket.socket", side_effect=flaky_socket),
+        ):
+            sock = find_free_port()
+
+        try:
+            self.assertEqual(2, len(attempts))
+            self.assertGreater(sock.getsockname()[1], 0)
+        finally:
+            sock.close()
+
+    def test_created_socket_is_closed_when_bind_fails(self):
+        closed = []
+
+        class FakeSocket:
+            def bind(self, addr):
+                raise OSError("bind failed")
+
+            def close(self):
+                closed.append(self)
+
+        with (
+            patch(
+                "socket.getaddrinfo",
+                return_value=[
+                    (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0))
+                ],
+            ),
+            patch("socket.socket", return_value=FakeSocket()),
+        ):
+            with self.assertRaises(RuntimeError):
+                find_free_port()
+
+        self.assertEqual(1, len(closed))
