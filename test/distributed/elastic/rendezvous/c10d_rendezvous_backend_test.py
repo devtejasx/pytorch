@@ -23,6 +23,7 @@ from torch.distributed.elastic.rendezvous import (
     RendezvousParameters,
 )
 from torch.distributed.elastic.rendezvous.c10d_rendezvous_backend import (
+    _create_file_store,
     C10dRendezvousBackend,
     create_backend,
 )
@@ -273,6 +274,41 @@ class CreateBackendTest(TestCase):
             r"The file creation for C10d store has failed. See inner exception for details.",
         ):
             create_backend(self._params_filestore)
+
+    @mock.patch("os.close")
+    @mock.patch("tempfile.mkstemp")
+    def test_create_backend_closes_tempfile_descriptor(
+        self, tempfile_mock, os_close_mock
+    ) -> None:
+        # FileStore opens the path itself, so the descriptor mkstemp returns is
+        # this process's to close. Leaving it open leaks one per rendezvous.
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+        self.addCleanup(os.unlink, path)
+
+        sentinel_fd = 12345
+        tempfile_mock.return_value = (sentinel_fd, path)
+
+        # Set the endpoint to empty so it defaults to creating a temp file
+        self._params_filestore.endpoint = ""
+
+        store = _create_file_store(self._params_filestore)
+
+        self.assertIsInstance(store, FileStore)
+        self.assertEqual(path, store.path)
+        os_close_mock.assert_called_once_with(sentinel_fd)
+
+    @mock.patch("os.close")
+    @mock.patch("tempfile.mkstemp")
+    def test_create_backend_does_not_close_anything_for_a_given_endpoint(
+        self, tempfile_mock, os_close_mock
+    ) -> None:
+        # A caller-supplied endpoint is just a path; no descriptor was created
+        # here, so nothing should be closed and mkstemp should not be reached.
+        _create_file_store(self._params_filestore)
+
+        tempfile_mock.assert_not_called()
+        os_close_mock.assert_not_called()
 
     @mock.patch(
         "torch.distributed.elastic.rendezvous.c10d_rendezvous_backend.FileStore"
