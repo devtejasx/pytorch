@@ -403,4 +403,13 @@ def launch_agent(
         raise
     finally:
         if shutdown_rdzv:
-            spec.rdzv_handler.shutdown()
+            try:
+                spec.rdzv_handler.shutdown()
+            except Exception:
+                # Tearing the rendezvous down can fail on its own -- an
+                # unreachable store, a network blip at teardown. Letting that
+                # propagate from the finally block replaces whatever is already
+                # in flight, and the usual casualty is the ChildFailedError
+                # naming the worker that actually died. Report it and leave the
+                # original exception, if any, on its way out.
+                logger.exception("Failed to shut down the rendezvous handler")

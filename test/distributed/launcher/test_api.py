@@ -10,6 +10,7 @@
 import os
 from unittest.mock import MagicMock, patch
 
+from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.launcher.api import launch_agent, LaunchConfig
 from torch.testing._internal.common_utils import run_tests, TestCase
 
@@ -94,6 +95,87 @@ class LauncherApiTest(TestCase):
         self.assertEqual(
             os.environ["TORCHELASTIC_SIGNALS_TO_HANDLE"],
             "SIGTERM,SIGINT,SIGHUP,SIGQUIT",
+        )
+
+    @patch("torch.distributed.launcher.api.LocalElasticAgent")
+    @patch("torch.distributed.launcher.api.rdzv_registry.get_rendezvous_handler")
+    def test_rdzv_shutdown_failure_does_not_mask_child_failure(
+        self, mock_get_handler, mock_agent
+    ):
+        """A failing rendezvous shutdown must not replace the worker failure.
+
+        ChildFailedError is what names the worker that actually died, and it
+        used to be discarded when shutdown() raised from the finally block.
+        """
+        config = LaunchConfig(min_nodes=1, max_nodes=1, nproc_per_node=1)
+
+        handler = MagicMock()
+        handler.shutdown.side_effect = RuntimeError("rendezvous store unreachable")
+        mock_get_handler.return_value = handler
+
+        mock_agent_instance = MagicMock()
+        mock_agent_instance.run.return_value = MagicMock(
+            is_failed=lambda: True, failures={}
+        )
+        mock_agent.return_value = mock_agent_instance
+
+        with self.assertRaises(ChildFailedError):
+            launch_agent(config, "dummy_script.py", [])
+
+        handler.shutdown.assert_called_once()
+
+    @patch("torch.distributed.launcher.api.LocalElasticAgent")
+    @patch("torch.distributed.launcher.api.rdzv_registry.get_rendezvous_handler")
+    def test_rdzv_shutdown_failure_does_not_mask_other_errors(
+        self, mock_get_handler, mock_agent
+    ):
+        """The same holds for any other error already on its way out."""
+        config = LaunchConfig(min_nodes=1, max_nodes=1, nproc_per_node=1)
+
+        handler = MagicMock()
+        handler.shutdown.side_effect = RuntimeError("rendezvous store unreachable")
+        mock_get_handler.return_value = handler
+
+        mock_agent_instance = MagicMock()
+        mock_agent_instance.run.side_effect = ValueError("the real problem")
+        mock_agent.return_value = mock_agent_instance
+
+        with self.assertRaises(ValueError):
+            launch_agent(config, "dummy_script.py", [])
+
+        handler.shutdown.assert_called_once()
+
+    @patch("torch.distributed.launcher.api.LocalElasticAgent")
+    @patch("torch.distributed.launcher.api.rdzv_registry.get_rendezvous_handler")
+    def test_rdzv_shutdown_failure_on_successful_run_is_logged_not_raised(
+        self, mock_get_handler, mock_agent
+    ):
+        """With nothing in flight, a failing shutdown is reported, not raised.
+
+        The run itself succeeded, so its return values are still handed back.
+        """
+        config = LaunchConfig(min_nodes=1, max_nodes=1, nproc_per_node=1)
+
+        handler = MagicMock()
+        handler.shutdown.side_effect = RuntimeError("rendezvous store unreachable")
+        mock_get_handler.return_value = handler
+
+        mock_agent_instance = MagicMock()
+        mock_agent_instance.run.return_value = MagicMock(
+            is_failed=lambda: False, return_values={0: "result"}
+        )
+        mock_agent.return_value = mock_agent_instance
+
+        with self.assertLogs(
+            "torch.distributed.launcher.api", level="ERROR"
+        ) as captured:
+            result = launch_agent(config, "dummy_script.py", [])
+
+        self.assertEqual({0: "result"}, result)
+        handler.shutdown.assert_called_once()
+        self.assertTrue(
+            any("rendezvous store unreachable" in line for line in captured.output),
+            f"expected the shutdown failure in the log, got {captured.output}",
         )
 
 
