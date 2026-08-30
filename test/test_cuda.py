@@ -496,7 +496,9 @@ torch.cuda.memory._set_allocator_settings(
 t = torch.ones(1024 * 1024, pin_memory=True)
 print(t.is_pinned())
 """
-        proc = subprocess.run([sys.executable, "-c", script], capture_output=True)
+        proc = subprocess.run(
+            [sys.executable, "-c", script], check=False, capture_output=True
+        )
         self.assertEqual(proc.returncode, 0)
 
     def test_cudart_register(self):
@@ -1421,6 +1423,7 @@ print(t.is_pinned())
         try:
             proc = subprocess.run(
                 [sys.executable, "-c", script],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=timeout_sec,

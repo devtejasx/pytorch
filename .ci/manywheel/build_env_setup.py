@@ -270,6 +270,7 @@ def ensure_pip_on_path() -> None:
     if (
         subprocess.run(
             ["python3", "-mpip", "--version"],
+            check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode

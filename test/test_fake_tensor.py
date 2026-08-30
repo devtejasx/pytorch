@@ -2395,6 +2395,7 @@ for t in threads:
 """
         result = subprocess.run(
             [sys.executable, "-c", script],
+            check=False,
             capture_output=True,
             timeout=60,
         )
@@ -2442,6 +2443,7 @@ assert not torch.cuda.is_initialized()
 """
         result = subprocess.run(
             [sys.executable, "-c", script],
+            check=False,
             capture_output=True,
             timeout=60,
         )

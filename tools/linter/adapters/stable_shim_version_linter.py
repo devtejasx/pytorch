@@ -72,6 +72,7 @@ def get_added_lines(filename: str) -> set[int]:
         # Check uncommitted changes (working directory vs HEAD)
         result = subprocess.run(
             ["git", "diff", "HEAD", filename],
+            check=False,
             cwd=REPO_ROOT,
             env={**os.environ, "GIT_NO_LAZY_FETCH": "1"},
             capture_output=True,

@@ -608,7 +608,8 @@ class _ValgrindWrapper:
         def run(args: list[str], **kwargs: Any) -> tuple[CompletedProcessType, str]:
             # https://thraxil.org/users/anders/posts/2008/03/13/Subprocess-Hanging-PIPE-is-your-enemy/
             with open(stdout_stderr_log, "wb") as f_stdout_stderr:
-                invocation = subprocess.run(
+                # check= is forwarded through kwargs, which ruff cannot see.
+                invocation = subprocess.run(  # noqa: PLW1510
                     args,
                     stdout=f_stdout_stderr,
                     stderr=subprocess.STDOUT,

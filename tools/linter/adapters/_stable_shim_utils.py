@@ -450,6 +450,7 @@ def run_with_retries(
         try:
             result = subprocess.run(
                 cmd,
+                check=False,
                 cwd=cwd,
                 env=env,
                 capture_output=True,
@@ -480,6 +481,7 @@ def run_git_object_command(
     try:
         result = subprocess.run(
             ["git", *args],
+            check=False,
             cwd=cwd,
             env=no_lazy,
             capture_output=True,
@@ -552,6 +554,7 @@ def merge_base_with_main() -> str:
     try:
         result = subprocess.run(
             ["git", "merge-base", "HEAD", main_ref],
+            check=False,
             cwd=REPO_ROOT,
             env=no_lazy,
             capture_output=True,

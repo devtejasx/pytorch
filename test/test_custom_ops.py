@@ -6131,6 +6131,7 @@ except RuntimeError as e:
 """
         result = subprocess.run(
             [sys.executable, "-c", script],
+            check=False,
             capture_output=True,
             text=True,
         )

@@ -104,6 +104,7 @@ def _has_nvlink() -> bool:
     try:
         result = subprocess.run(
             ["nvidia-smi", "topo", "-m"],
+            check=False,
             capture_output=True,
             text=True,
             timeout=5,

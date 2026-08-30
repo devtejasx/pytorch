@@ -118,6 +118,7 @@ def fix_rpath(libtorch_lib: Path) -> None:
         if item.is_file() and (item.name.endswith(".so") or ".so." in item.name):
             result = subprocess.run(
                 [patchelf, "--set-rpath", "$ORIGIN", "--force-rpath", str(item)],
+                check=False,
                 capture_output=True,
                 text=True,
             )
@@ -146,6 +147,7 @@ def _is_rocm_sdk_wheel_variant(desired_cuda: str) -> bool:
     return (
         subprocess.run(
             [sys.executable, "-m", "pip", "show", "rocm"],
+            check=False,
             capture_output=True,
             text=True,
         ).returncode
@@ -155,7 +157,10 @@ def _is_rocm_sdk_wheel_variant(desired_cuda: str) -> bool:
 
 def _needed(patchelf: str, so: Path) -> list[str]:
     r = subprocess.run(
-        [patchelf, "--print-needed", str(so)], capture_output=True, text=True
+        [patchelf, "--print-needed", str(so)],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     return r.stdout.split() if r.returncode == 0 else []
 

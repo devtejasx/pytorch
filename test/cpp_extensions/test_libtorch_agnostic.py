@@ -1593,6 +1593,7 @@ except RuntimeError as e:
 
         result = subprocess.run(
             [sys.executable, "-c", test_script],
+            check=False,
             capture_output=True,
             text=True,
             env=env,
@@ -1769,6 +1770,7 @@ except RuntimeError as e:
 
         result = subprocess.run(
             [sys.executable, "-c", test_script],
+            check=False,
             capture_output=True,
             text=True,
             env=env,

@@ -36,6 +36,7 @@ def get_tag(pytorch_root: str | Path) -> str:
     try:
         tag = subprocess.run(
             ["git", "describe", "--tags", "--exact"],
+            check=False,
             cwd=pytorch_root,
             encoding="ascii",
             capture_output=True,

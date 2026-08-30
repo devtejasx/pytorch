@@ -4357,6 +4357,7 @@ for dtype in (torch.int32, torch.int64):
         result = subprocess.run(
             [sys.executable, "-c", code],
             # Avoid importing the source tree's ungenerated torch package in CI.
+            check=False,
             cwd=Path(__file__).resolve().parents[1],
             env=env,
             capture_output=True,

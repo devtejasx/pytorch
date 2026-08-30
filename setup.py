@@ -57,7 +57,7 @@ def main() -> int:
     if len(sys.argv) > 2:
         warnings.warn(f"ignoring extra arguments: {shlex.join(sys.argv[2:])}")
     print(f"Forwarding to `{shlex.join(replacement)}`.", file=sys.stderr)
-    return subprocess.run(replacement).returncode
+    return subprocess.run(replacement, check=False).returncode
 
 
 if __name__ == "__main__":

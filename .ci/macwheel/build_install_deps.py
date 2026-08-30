@@ -41,7 +41,7 @@ def retry(cmd: list[str], delays: tuple[int, ...] = (1, 2, 4, 8)) -> None:
     for delay in (0, *delays):
         if delay:
             time.sleep(delay)
-        result = subprocess.run(cmd)
+        result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             return
         last_rc = result.returncode

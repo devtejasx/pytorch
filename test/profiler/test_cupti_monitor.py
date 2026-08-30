@@ -89,6 +89,7 @@ def _isolated(test_fn):
         env = {**os.environ, "PYTORCH_CUPTI_ISOLATED_CHILD": "1"}
         proc = subprocess.run(
             [sys.executable, __file__, test_id],
+            check=False,
             env=env,
             capture_output=True,
             text=True,
@@ -2990,7 +2991,11 @@ class TestCuptiMonitorCUDA(TestCase):
             """
         )
         p = subprocess.run(
-            [sys.executable, "-c", script], capture_output=True, text=True, timeout=300
+            [sys.executable, "-c", script],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         self.assertEqual(
             p.returncode, 0, f"child failed:\nstdout={p.stdout}\nstderr={p.stderr}"
@@ -3652,6 +3657,7 @@ torch.randn(1, device="cuda")
 _cupti_monitor.enable_hes_early()
 """,
             ],
+            check=False,
             text=True,
             timeout=60,
             capture_output=True,
@@ -4183,6 +4189,7 @@ _cupti_monitor.enable_hes_early()
         # the environment.
         p = subprocess.run(
             [sys.executable, "-c", script],
+            check=False,
             text=True,
             capture_output=True,
             timeout=120,
@@ -4378,6 +4385,7 @@ _cupti_monitor.enable_hes_early()
                 env["PARITY_HES"] = "1"
             p = subprocess.run(
                 [sys.executable, "-c", script],
+                check=False,
                 text=True,
                 capture_output=True,
                 timeout=300,
@@ -4479,7 +4487,11 @@ _cupti_monitor.enable_hes_early()
             """
         )
         p = subprocess.run(
-            [sys.executable, "-c", script], text=True, capture_output=True, timeout=300
+            [sys.executable, "-c", script],
+            check=False,
+            text=True,
+            capture_output=True,
+            timeout=300,
         )
         self.assertEqual(
             p.returncode, 0, f"subprocess failed:\nstdout={p.stdout}\nstderr={p.stderr}"

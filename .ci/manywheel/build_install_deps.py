@@ -34,7 +34,7 @@ def retry(cmd: list[str], delays: tuple[int, ...] = (1, 2, 4, 8)) -> None:
     for delay in (0, *delays):
         if delay:
             time.sleep(delay)
-        result = subprocess.run(cmd)
+        result = subprocess.run(cmd, check=False)
         if result.returncode == 0:
             return
         last_rc = result.returncode
@@ -104,7 +104,8 @@ def main() -> None:
             "-c",
             "import sys; from tools.setup_helpers.cupti import find_cupti_header as f;"
             " sys.exit(0 if f() else 1)",
-        ]
+        ],
+        check=False,
     )
     # Skip the (heavy, version-matched) libclang wheel when LIBCLANG_PATH already points the
     # codegen at a libclang.so -- that env is expected to supply the clang bindings itself.

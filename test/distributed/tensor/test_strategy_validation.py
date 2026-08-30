@@ -1440,6 +1440,7 @@ class TestMainModule(TestCase):
                 "cpu",
                 *extra_args,
             ],
+            check=False,
             capture_output=True,
             text=True,
             timeout=120,

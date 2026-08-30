@@ -70,6 +70,7 @@ def run_command(
     try:
         return subprocess.run(
             args,
+            check=False,
             capture_output=True,
         )
     finally:

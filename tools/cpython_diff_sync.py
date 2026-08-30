@@ -82,7 +82,8 @@ def write_utf8(path: Path, text: str) -> None:
 
 
 def _git(args: list[str], **kwargs) -> subprocess.CompletedProcess:
-    return subprocess.run(
+    # Callers forward check= through kwargs, which ruff cannot see.
+    return subprocess.run(  # noqa: PLW1510
         ["git", *_GIT_CONFIG_ARGS, *args],
         env=_GIT_ENV,
         **kwargs,

@@ -252,6 +252,7 @@ class TestCompileWorker(TestCase):
         with tempfile.TemporaryDirectory() as cwd:
             result = subprocess.run(
                 [sys.executable, "-c", code],
+                check=False,
                 cwd=cwd,
                 capture_output=True,
                 text=True,
@@ -321,6 +322,7 @@ class TestCompileWorker(TestCase):
             signal_path = os.path.join(cwd, "worker_started")
             result = subprocess.run(
                 [sys.executable, "-c", code],
+                check=False,
                 cwd=cwd,
                 capture_output=True,
                 text=True,
@@ -373,7 +375,11 @@ class TestSubprocPoolCallbackSafety(TestCase):
             """
         )
         result = subprocess.run(
-            [sys.executable, "-c", code], capture_output=True, text=True, timeout=120
+            [sys.executable, "-c", code],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
         self.assertEqual(
             result.returncode,
@@ -434,7 +440,11 @@ class TestSubprocPoolCallbackSafety(TestCase):
             """
         )
         result = subprocess.run(
-            [sys.executable, "-c", code], capture_output=True, text=True, timeout=120
+            [sys.executable, "-c", code],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
         self.assertEqual(
             result.returncode,

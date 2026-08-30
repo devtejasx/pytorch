@@ -1527,6 +1527,7 @@ class TestPrecompile(TestCase):
         try:
             proc = subprocess.run(
                 [sys.executable, "-c", driver],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=300,

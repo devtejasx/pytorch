@@ -30,6 +30,7 @@ int main() {{ return 0; }}
                     *pytorch_includes,
                     str(src_file),
                 ],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=60,

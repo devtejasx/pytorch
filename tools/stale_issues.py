@@ -49,7 +49,7 @@ def gh_issue_list(search, label, limit):
     ]
     if label:
         cmd += ["-l", label]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
         sys.exit(1)
@@ -72,6 +72,7 @@ def gh_issue_count(search_query):
             "-f",
             "per_page=1",
         ],
+        check=False,
         capture_output=True,
         text=True,
     )
@@ -148,6 +149,7 @@ def cmd_labels(args):
                 "-f",
                 f"page={page}",
             ],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -176,6 +178,7 @@ SUBSCRIPTION_DIR = os.path.join(
 def gh_graphql(query):
     result = subprocess.run(
         ["gh", "api", "graphql", "-f", f"query={query}"],
+        check=False,
         capture_output=True,
         text=True,
     )
@@ -192,6 +195,7 @@ def subscription_state_path(issue_number):
 def cmd_subscription_save(args):
     result = subprocess.run(
         ["gh", "api", f"repos/pytorch/pytorch/issues/{args.issue}", "--jq", ".node_id"],
+        check=False,
         capture_output=True,
         text=True,
     )
@@ -251,6 +255,7 @@ def cmd_collaborator_check(args):
             f"repos/pytorch/pytorch/collaborators/{args.username}",
             "--silent",
         ],
+        check=False,
         capture_output=True,
         text=True,
     )

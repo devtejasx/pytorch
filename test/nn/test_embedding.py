@@ -1237,6 +1237,7 @@ torch.cuda.synchronize()
 """
         proc = subprocess.run(
             [sys.executable, "-c", script],
+            check=False,
             capture_output=True,
             text=True,
             errors="replace",

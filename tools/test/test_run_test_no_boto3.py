@@ -32,6 +32,7 @@ class TestRunTestNoBoto3(unittest.TestCase):
     def test_stats_imports_without_boto3(self) -> None:
         result = subprocess.run(
             [sys.executable, "-c", _CHECK],
+            check=False,
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,

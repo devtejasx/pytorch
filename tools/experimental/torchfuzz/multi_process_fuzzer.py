@@ -124,6 +124,7 @@ def run_fuzzer_with_seed(
 
         result = subprocess.run(
             cmd,
+            check=False,
             capture_output=True,
             text=True,
             timeout=300,  # 5 minute timeout per seed

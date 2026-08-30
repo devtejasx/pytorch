@@ -5329,14 +5329,20 @@ class TestVecISACheckBuild(TestCase):
                 env.pop("LD_LIBRARY_PATH", None)
             cold_load = f'from ctypes import cdll; cdll.LoadLibrary("{lib_path}")'
             cold = subprocess.run(
-                [sys.executable, "-c", cold_load], env=env, stderr=subprocess.DEVNULL
+                [sys.executable, "-c", cold_load],
+                check=False,
+                env=env,
+                stderr=subprocess.DEVNULL,
             )
             if cold.returncode == 0:
                 raise unittest.SkipTest("loader resolves libc10.so without torch")
 
             script = cpu_vec_isa.VecISA._avx_py_load.replace("__lib_path__", lib_path)
             probe = subprocess.run(
-                [sys.executable, "-c", script], env=env, stderr=subprocess.PIPE
+                [sys.executable, "-c", script],
+                check=False,
+                env=env,
+                stderr=subprocess.PIPE,
             )
             self.assertEqual(probe.returncode, 0, msg=probe.stderr.decode())
 

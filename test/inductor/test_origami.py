@@ -516,6 +516,7 @@ class TestOrigami(TestCase):
 
         result = subprocess.run(
             [sys.executable, "-c", snippet],
+            check=False,
             env=env,
             capture_output=True,
             text=True,

@@ -64,7 +64,8 @@ TLX_TEST_PATTERNS = [
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     print("+ " + " ".join(str(c) for c in cmd), flush=True)
-    return subprocess.run(cmd, **kwargs)
+    # Callers forward check= through kwargs, which ruff cannot see.
+    return subprocess.run(cmd, **kwargs)  # noqa: PLW1510
 
 
 def uv_bin() -> str:
@@ -155,6 +156,7 @@ def probe() -> dict:
     """
     res = subprocess.run(
         [sys.executable, str(Path(__file__).parent / "_probe.py")],
+        check=False,
         capture_output=True,
         text=True,
         cwd="/",

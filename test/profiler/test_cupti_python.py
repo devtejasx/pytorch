@@ -148,7 +148,7 @@ class TestPyLibCupti(TestCase):
             "lib.activity_enable_hw_trace(False)\n"
         )
         proc = subprocess.run(
-            [sys.executable, "-c", script], capture_output=True, text=True
+            [sys.executable, "-c", script], check=False, capture_output=True, text=True
         )
         if proc.returncode == 2:
             self.skipTest("HW trace unsupported on this platform")
@@ -166,7 +166,7 @@ class TestPyLibCupti(TestCase):
             "pylibcupti().finalize()"
         )
         proc = subprocess.run(
-            [sys.executable, "-c", script], capture_output=True, text=True
+            [sys.executable, "-c", script], check=False, capture_output=True, text=True
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
 

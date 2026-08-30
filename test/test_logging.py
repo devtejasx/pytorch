@@ -83,6 +83,7 @@ class LoggingTest(TestCase):
                     "from torch_issue173759_backend import emit_logs; "
                     "emit_logs()",
                 ],
+                check=False,
                 cwd=pytorch_root,
                 env=env,
                 capture_output=True,
@@ -490,6 +491,7 @@ class LoggingTest(TestCase):
                     "-c",
                     'set -euo pipefail; source "$TORCH_TRACE_HELPER"; collect_tlparse_output',
                 ],
+                check=False,
                 cwd=workdir,
                 env=env,
                 text=True,

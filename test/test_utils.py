@@ -814,6 +814,7 @@ class TestStandaloneCPPJIT(TestCase):
             for shell in [True, False]:
                 r = subprocess.run(
                     [exec_path],
+                    check=False,
                     shell=shell,
                     stdout=subprocess.PIPE,
                 )

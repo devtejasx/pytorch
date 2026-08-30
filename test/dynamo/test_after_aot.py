@@ -580,6 +580,7 @@ reader.tensor(buf0, (3, 4, 5, 6), (120, 1, 24, 4), is_leaf=True)  # x""",
             tmp.flush()
             res = subprocess.run(
                 [sys.executable, tmp.name],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=60,

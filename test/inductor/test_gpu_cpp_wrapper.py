@@ -813,6 +813,7 @@ class TestLazyCompileKernelCollision(InductorTestCase):
             # First run: cold compile, populates on-disk caches.
             r1 = subprocess.run(
                 [sys.executable, "-c", _LAZY_COMPILE_COLLISION_SCRIPT],
+                check=False,
                 capture_output=True,
                 cwd=cache_dir,
                 text=True,
@@ -826,6 +827,7 @@ class TestLazyCompileKernelCollision(InductorTestCase):
             # Second run: warm caches trigger the collision without the fix.
             r2 = subprocess.run(
                 [sys.executable, "-c", _LAZY_COMPILE_COLLISION_SCRIPT],
+                check=False,
                 capture_output=True,
                 cwd=cache_dir,
                 text=True,
@@ -882,6 +884,7 @@ class TestCppWrapperStaticInitDeadlock(InductorTestCase):
             try:
                 r = subprocess.run(
                     [sys.executable, "-c", _STATIC_INIT_DEADLOCK_SCRIPT],
+                    check=False,
                     capture_output=True,
                     cwd=cache_dir,
                     text=True,
@@ -1025,6 +1028,7 @@ class TestLazyTmaGlobalScratch(InductorTestCase):
             }
             result = subprocess.run(
                 [sys.executable, str(script_path)],
+                check=False,
                 capture_output=True,
                 cwd=cache_dir,
                 text=True,
