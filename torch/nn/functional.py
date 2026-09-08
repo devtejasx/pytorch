@@ -5801,10 +5801,27 @@ def pad(
         See :class:`torch.nn.CircularPad2d`, :class:`torch.nn.ConstantPad2d`,
         :class:`torch.nn.ReflectionPad2d`, and :class:`torch.nn.ReplicationPad2d`
         for concrete examples on how each of the padding modes works. Constant
-        padding is implemented for arbitrary dimensions. Circular, replicate and
-        reflection padding are implemented for padding the last 3 dimensions of a
-        4D or 5D input tensor, the last 2 dimensions of a 3D or 4D input tensor,
-        or the last dimension of a 2D or 3D input tensor.
+        padding is implemented for arbitrary dimensions, and constrains
+        :attr:`pad` only by ``len(pad) // 2 <= input.dim()``.
+
+        ``'circular'``, ``'replicate'`` and ``'reflect'`` are implemented per
+        rank, and each supports only the lengths of :attr:`pad` listed here:
+
+        =================  ======================================
+        ``input.dim()``    supported ``len(pad)``
+        =================  ======================================
+        2                  2 (last dimension)
+        3                  2 (last dimension), 4 (last 2)
+        4                  4 (last 2 dimensions), 6 (last 3)
+        5                  6 (last 3 dimensions)
+        =================  ======================================
+
+        A combination outside this table raises ``NotImplementedError`` from the
+        kernel dispatch rather than being rejected during argument validation.
+        Note in particular that ``len(pad) == 2`` pads the last dimension of a
+        2D or 3D input but is *not* accepted for a 4D input, so the pattern that
+        works for a 3D tensor does not carry over by adding a batch dimension;
+        use ``len(pad) == 4`` and pad the second-to-last dimension by ``(0, 0)``.
 
     Note:
         When using the CUDA backend, this operation may induce nondeterministic
@@ -5815,6 +5832,9 @@ def pad(
         input (Tensor): N-dimensional tensor
         pad (tuple): m-elements tuple, where
             :math:`\frac{m}{2} \leq` input dimensions and :math:`m` is even.
+            For every :attr:`mode` other than ``'constant'`` this is necessary
+            but not sufficient; see the table under **Padding mode** above
+            for the combinations each rank accepts.
         mode: ``'constant'``, ``'reflect'``, ``'replicate'`` or ``'circular'``.
             Default: ``'constant'``
         value: fill value for ``'constant'`` padding. Default: ``0``
