@@ -402,6 +402,43 @@ TEST(PytorchStreamWriterAndReader, SkipDuplicateSerializationIdRecords) {
   remove(file_name);
 }
 
+TEST(PytorchStreamWriterAndReader, SerializationIdNameHashIgnoresRecordOrder) {
+  // The first 20 digits of the serialization id hash the record names. They
+  // must not depend on the iteration order of the writer's unordered_set,
+  // which differs between standard libraries, so the same records written on
+  // two machines give the same id. Writing the records in a different order
+  // gives a different set iteration order within one process. (The last 20
+  // digits combine the data CRCs in write order and do change.)
+  const std::array<const char*, 8> names = {
+      "data.pkl",
+      "byteorder",
+      "data/0",
+      "data/1",
+      "data/2",
+      "data/3",
+      "data/4",
+      "constants.pkl"};
+  const std::string payload = "payload";
+
+  auto name_hash_for = [&](bool reversed) {
+    std::ostringstream oss;
+    PyTorchStreamWriter writer([&](const void* b, size_t n) -> size_t {
+      oss.write(static_cast<const char*>(b), n);
+      return oss ? n : 0;
+    });
+    for (const auto i : c10::irange(names.size())) {
+      const char* name = names[reversed ? names.size() - 1 - i : i];
+      writer.writeRecord(name, payload.data(), payload.size());
+    }
+    writer.writeEndOfFile();
+    const std::string id = writer.serializationId();
+    EXPECT_EQ(id.size(), 40);
+    return id.substr(0, 20);
+  };
+
+  EXPECT_EQ(name_hash_for(false), name_hash_for(true));
+}
+
 TEST(PytorchStreamWriterAndReader, LogAPIUsageMetadata) {
   std::map<std::string, std::map<std::string, std::string>> logs;
 
