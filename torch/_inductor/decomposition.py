@@ -528,9 +528,13 @@ def addmm(
             return out + beta * self
         return out + self
 
+    # torch.addmm ignores `self` when beta == 0 and `mat1 @ mat2` when
+    # alpha == 0, NaN and inf included. Scaling the term by zero would not
+    # (0 * nan is nan), so leave these calls to the real kernel.
+    if beta == 0 or alpha == 0:
+        return NotImplemented
+
     if mat1.device.type not in ["cpu", "mps"]:
-        if beta == 0 and mat1.device.type == "cuda":
-            return NotImplemented
         if (
             statically_known_true(mat1.size(-1) == 1)
             and statically_known_true(mat1.size(0) != 1)

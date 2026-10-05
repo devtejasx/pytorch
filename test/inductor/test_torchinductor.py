@@ -4976,6 +4976,22 @@ for dtype in (torch.int32, torch.int64):
             ),
         )
 
+    def test_addmm_zero_scalar_ignores_nan(self):
+        # https://github.com/pytorch/pytorch/issues/196596
+        # addmm ignores `input` when beta == 0 and `mat1 @ mat2` when
+        # alpha == 0, so NaNs in the ignored term must not reach the output.
+        nan = float("nan")
+
+        def beta_zero(x, a, b):
+            return torch.addmm(x, a, b, beta=0)
+
+        def alpha_zero(x, a, b):
+            return torch.addmm(x, a, b, alpha=0)
+
+        b = torch.randn(4, 4)
+        self.common(beta_zero, (torch.full((4,), nan), torch.randn(1, 4), b))
+        self.common(alpha_zero, (torch.randn(4), torch.full((1, 4), nan), b))
+
     def test_addmv(self):
         def fn(a, b, c):
             return torch.addmv(a, b, c)
