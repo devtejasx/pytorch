@@ -159,6 +159,49 @@ class TestHub(TestCase):
         self.assertEqual(sum_of_state_dict(loaded_state), SUM_OF_HUB_EXAMPLE)
 
     @retry(Exception, tries=3)
+    def test_load_state_dict_from_url_rejects_file_name_outside_model_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_dir = os.path.join(tmpdir, "checkpoints")
+            outside = os.path.join(tmpdir, "escaped.pth")
+            for file_name in ("../escaped.pth", outside, ".", "sub/../../escaped.pth"):
+                with self.subTest(file_name=file_name):
+                    with patch.object(hub, "download_url_to_file") as download:
+                        with self.assertRaisesRegex(ValueError, "inside model_dir"):
+                            hub.load_state_dict_from_url(
+                                "file:///nonexistent/model.pth",
+                                model_dir=model_dir,
+                                file_name=file_name,
+                            )
+                        download.assert_not_called()
+            self.assertFalse(os.path.exists(outside))
+
+    def test_load_state_dict_from_url_rejects_url_path_dot_dot(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_dir = os.path.join(tmpdir, "checkpoints")
+            with patch.object(hub, "download_url_to_file") as download:
+                with self.assertRaisesRegex(ValueError, "inside model_dir"):
+                    hub.load_state_dict_from_url(
+                        "https://example.com/weights/..", model_dir=model_dir
+                    )
+                download.assert_not_called()
+
+    def test_load_state_dict_from_url_file_name_inside_model_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_dir = os.path.join(tmpdir, "checkpoints")
+            state = {"w": torch.ones(2)}
+
+            def fake_download(url, dst, hash_prefix=None, progress=True):
+                torch.save(state, dst)
+
+            with patch.object(hub, "download_url_to_file", side_effect=fake_download):
+                loaded = hub.load_state_dict_from_url(
+                    "file:///nonexistent/model.pth",
+                    model_dir=model_dir,
+                    file_name="renamed.pth",
+                )
+            self.assertEqual(loaded["w"], state["w"])
+            self.assertTrue(os.path.exists(os.path.join(model_dir, "renamed.pth")))
+
     def test_load_legacy_zip_checkpoint(self):
         with warnings.catch_warnings(record=True) as ws:
             warnings.simplefilter("always")

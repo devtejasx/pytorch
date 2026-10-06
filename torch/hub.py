@@ -857,6 +857,8 @@ def load_state_dict_from_url(
             ensure unique names and to verify the contents of the file.
             Default: False
         file_name (str, optional): name for the downloaded file. Filename from ``url`` will be used if not set.
+            The resulting path must stay inside ``model_dir``; a name such as ``../model.pth`` or an
+            absolute path raises ``ValueError``.
         weights_only(bool, optional): If True, only weights will be loaded and no complex pickled objects.
             Recommended for untrusted sources. See :func:`~torch.load` for more details.
 
@@ -885,6 +887,12 @@ def load_state_dict_from_url(
     if file_name is not None:
         filename = file_name
     cached_file = os.path.join(model_dir, filename)
+    resolved_dir = Path(model_dir).resolve(strict=False)
+    resolved_file = Path(cached_file).resolve(strict=False)
+    if resolved_file == resolved_dir or not resolved_file.is_relative_to(resolved_dir):
+        raise ValueError(
+            f"Download destination {filename!r} must be a file inside model_dir {model_dir!r}"
+        )
     if not os.path.exists(cached_file):
         sys.stdout.write(f'Downloading: "{url}" to {cached_file}\n')
         hash_prefix = None
