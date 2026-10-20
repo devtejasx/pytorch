@@ -6,6 +6,7 @@ import pickle
 import torch
 from torch.optim.swa_utils import (
     AveragedModel,
+    get_ema_avg_fn,
     get_ema_multi_avg_fn,
     get_swa_multi_avg_fn,
     update_bn,
@@ -156,6 +157,12 @@ class TestSWAUtilsGeneric(TestCase):
         self.assertFalse(cnn.training)
 
         self.assertEqual(cnn.bn.momentum, 0.3)
+
+    @parametrize("ema_fn", [get_ema_avg_fn, get_ema_multi_avg_fn])
+    @parametrize("decay", [float("nan"), -0.1, 1.1])
+    def test_ema_rejects_invalid_decay(self, ema_fn, decay):
+        with self.assertRaisesRegex(ValueError, "Invalid decay value"):
+            ema_fn(decay)
 
 
 instantiate_parametrized_tests(TestSWAUtilsGeneric)
