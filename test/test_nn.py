@@ -10831,6 +10831,21 @@ class TestNNDeviceType(NNTestCase):
         self._test_gumbel_softmax_straight_through(device, dtype)
         self._test_gumbel_softmax_grad(device, dtype)
 
+    @dtypes(torch.half, torch.bfloat16, torch.float)
+    def test_gumbel_softmax_small_tau_large_logits(self, device, dtype):
+        # (logits + gumbels) / tau must not overflow before the softmax
+        logits = torch.tensor([[10000.0, -10000.0, 0.5, -0.5]], device=device, dtype=dtype)
+        expected = torch.tensor([[1.0, 0.0, 0.0, 0.0]], device=device, dtype=dtype)
+        for hard in (False, True):
+            torch.manual_seed(0)
+            y = F.gumbel_softmax(logits, tau=0.1, hard=hard)
+            self.assertEqual(y, expected)
+
+    def test_gumbel_softmax_empty(self, device):
+        for shape in ((0, 4), (2, 0)):
+            y = F.gumbel_softmax(torch.randn(shape, device=device), tau=1.0)
+            self.assertEqual(y.shape, shape)
+
     def _test_rnn_retain_variables(self, device, dtype):
         rnns = [nn.LSTM(10, 20, num_layers=2).to(device, dtype),
                 nn.GRU(10, 20, num_layers=2).to(device, dtype),
