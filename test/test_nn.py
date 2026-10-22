@@ -1744,6 +1744,19 @@ tensor(..., device='meta', size=(1,), requires_grad=True)""")
         vec = parameters_to_vector(model.parameters())
         self.assertEqual(vec.size(0), 980)
 
+    def test_parameters_to_vector_non_contiguous(self):
+        model = nn.Sequential(nn.Conv2d(3, 8, 3), nn.Flatten(), nn.Linear(288, 2))
+        expected = parameters_to_vector(model.parameters())
+
+        model = model.to(memory_format=torch.channels_last)
+        self.assertFalse(model[0].weight.is_contiguous())
+        self.assertEqual(parameters_to_vector(model.parameters()), expected)
+
+        model(torch.randn(1, 3, 8, 8).to(memory_format=torch.channels_last)).sum().backward()
+        grads = parameters_to_vector(p.grad for p in model.parameters())
+        self.assertEqual(grads.shape, expected.shape)
+        self.assertEqual(grads[: model[0].weight.numel()], model[0].weight.grad.flatten())
+
     def test_vector_to_parameters(self):
         conv1 = nn.Conv2d(3, 10, 5)
         fc1 = nn.Linear(10, 20)
